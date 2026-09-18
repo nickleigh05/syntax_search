@@ -1,0 +1,7 @@
+module SyntaxSearch
+singleton Theme 1.0 Theme.qml
+SearchPanel 1.0 SearchPanel.qml
+ResultList 1.0 ResultList.qml
+DetailPane 1.0 DetailPane.qml
+DocsetMenu 1.0 DocsetMenu.qml
+TypeFilterMenu 1.0 TypeFilterMenu.qml
