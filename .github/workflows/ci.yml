@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Byte-compile backend
+        run: python -m py_compile docset_index.py
+      - name: Run backend tests
+        run: python -m unittest discover -s tests -v
+
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Syntax check
+        run: bash -n bin/syntax-search && bash -n install.sh
+      - name: shellcheck
+        run: shellcheck bin/syntax-search install.sh
