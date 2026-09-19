@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd "$(dirname "$SELF")/.." && pwd -P)"
+SHELL_QML="$REPO_DIR/shell.qml"
+
+VERSION="0.1.0"
+
+usage() {
+    cat <<EOF
+Usage: syntax-search [--switch|--show|--hide|--quit]
+
+  (no args)   toggle the search panel (starts it if not running)
+  --switch    open the panel with the docset picker expanded
+  --show      show the panel
+  --hide      hide the panel
+  --quit      stop the resident instance
+  --version   print the version
+  --help      show this help
+EOF
+}
+
+ACTION=toggle
+case "${1:-}" in
+    "" | --toggle) ;;
+    --switch | -s) ACTION=switchDocset ;;
+    --show) ACTION=show ;;
+    --hide) ACTION=hide ;;
+    --quit | -q) ACTION=quit ;;
+    -V | --version) echo "syntax-search $VERSION"; exit 0 ;;
+    -h | --help) usage; exit 0 ;;
+    *) echo "syntax-search: unknown option '$1'" >&2; usage >&2; exit 2 ;;
+esac
+
+if ! command -v qs >/dev/null 2>&1; then
+    msg="quickshell (qs) is not installed or not on PATH"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "Syntax Search" "$msg"
+    else
+        echo "syntax-search: $msg" >&2
+    fi
+    exit 1
+fi
+
+if qs -p "$SHELL_QML" ipc call panel "$ACTION" >/dev/null 2>&1; then
+    exit 0
+fi
+
+case "$ACTION" in
+    hide | quit) exit 0 ;;
+esac
+
+LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/syntax-search"
+mkdir -p "$LOG_DIR"
+
+START_MODE=search
+[[ "$ACTION" == "switchDocset" ]] && START_MODE=switch
+
+SYNTAX_SEARCH_MODE="$START_MODE" setsid qs -p "$SHELL_QML" </dev/null >"$LOG_DIR/last.log" 2>&1 &
